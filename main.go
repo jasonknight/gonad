@@ -4,7 +4,8 @@ import (
 	"os"
 	path "path/filepath"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
+	"time"
+	"bufio"
 )
 var log = logrus.New()
 const Version = "1.0.0"
@@ -85,19 +86,31 @@ func main() {
 			log.Error(err)
 			os.Exit(1)
 		}
-		go handleAccept(env, conn)
+		go handleAccept(env, conn, 5 * time.Second)
 	}
 }
-func handleAccept(env Env, conn net.Conn) {
-	b,err := ioutil.ReadAll(conn)
-	if err != nil {
-		log.WithFields(logrus.Fields{
-			"method": "handleAccept",
-			"while": "reading from client",
-			"remote": conn.RemoteAddr(),
-			"local": conn.LocalAddr(),
-		}).Error(err)
+func handleAccept(env Env, conn net.Conn,maxReadTimeout time.Duration) {
+	total_bytes := 0
+	br := bufio.NewReader(conn)
+	defer func () {
+		conn.Close()
+		env.Fd.Write([]byte("\n"))
+	}()
+	for {
+		conn.SetReadDeadline(time.Now().Add(maxReadTimeout))
+		bytes,err := br.ReadBytes('\n')
+		total_bytes += len(bytes)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"method": "handleAccept",
+				"while": "reading from client",
+				"remote": conn.RemoteAddr(),
+				"local": conn.LocalAddr(),
+				"total_bytes_read": total_bytes,
+			}).Error(err)
+			return
+		}
+		env.Fd.Write(bytes)
+		env.Fd.Write([]byte("\n"))
 	}
-	conn.Close()
-	env.Fd.Write(b)
 }
