@@ -7,6 +7,7 @@ import (
 	"os"
 	path "path/filepath"
 	"time"
+	"io"
 )
 
 var log = logrus.New()
@@ -106,13 +107,18 @@ func handleAccept(env Env, conn net.Conn, maxReadTimeout time.Duration) {
 		bytes, err := br.ReadBytes('\n')
 		total_bytes += len(bytes)
 		if err != nil {
-			log.WithFields(logrus.Fields{
+			rep := log.WithFields(logrus.Fields{
 				"method":           "handleAccept",
 				"while":            "reading from client",
 				"remote":           conn.RemoteAddr(),
 				"local":            conn.LocalAddr(),
 				"total_bytes_read": total_bytes,
-			}).Error(err)
+			})
+			if err == io.EOF {
+				rep.Info(err)
+			} else {
+				rep.Error(err)
+			}
 			return
 		}
 		env.Fd.Write(bytes)
