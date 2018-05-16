@@ -25,9 +25,6 @@ func pathExists(path string) bool {
 }
 func createEnv() (Env,error) {
 	host := os.Getenv("GONAD_HOST")
-	if host == "" {
-		host = "localhost"
-	}
 	port := os.Getenv("GONAD_PORT")
 	if port == "" {
 		port = "601"
