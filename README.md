@@ -1,4 +1,4 @@
-# Gonad - it's got just one
+# Gonad
 
 A simple TCP logging server. 
 
