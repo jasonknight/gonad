@@ -81,6 +81,7 @@ func TestHandleAccept(t *testing.T) {
 	os.Setenv("GONNAD_DESTINATION_PATH",old_path)
 
 	test_bytes := []byte("hello world\n")
+	go handleAccept(env,s,5 * time.Second)
 	go func(wr *bufio.Writer) {
 		n,err := wr.Write(test_bytes)
 		if err != nil {
@@ -90,9 +91,7 @@ func TestHandleAccept(t *testing.T) {
 			t.Errorf("n=%d",n)
 		}
 		wr.Flush()
-		time.Sleep(1 * time.Second)
 	}(bufio.NewWriter(c))
-	go handleAccept(env,s,5 * time.Second)
 	time.Sleep(1 * time.Second)
 	env.Fd.Close()
 	contents,err := ioutil.ReadFile("./test.golden")

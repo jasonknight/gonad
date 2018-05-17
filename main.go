@@ -49,15 +49,8 @@ func createEnv() (Env, error) {
 		os.Exit(1)
 	}
 	var f *os.File
-	var err error
 	if dest_type == "file" {
-		f, err = os.OpenFile(dest_path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
-		if err != nil {
-			log.WithFields(logrus.Fields{
-				"path": dest_path,
-			}).Error(err)
-			os.Exit(1)
-		}
+		f = nil
 	} else if dest_type == "stdout" {
 		f = os.Stdout
 	} else if dest_type == "stderr" {
@@ -104,15 +97,36 @@ func main() {
 		go handleAccept(env, conn, 5*time.Second)
 	}
 }
+
 func handleAccept(env Env, conn net.Conn, maxReadTimeout time.Duration) {
+	var dst *bufio.Writer
+	var fd *os.File
+	var err error
 	total_bytes := 0
 	br := bufio.NewReader(conn)
-	dst := bufio.NewWriter(env.Fd)
-	defer func() {
-		conn.Close()
+	fd = env.Fd
+	defer func(){
 		dst.Write([]byte("\n"))
 		dst.Flush()
+		conn.Close()
+		if env.Destination == "file" {
+			fd.Close()
+		}
 	}()
+	if env.Destination == "file" {
+		fd,err = os.OpenFile(env.DestinationPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"method":           "handleAccept",
+				"while":            "reading from client",
+				"remote":           conn.RemoteAddr(),
+				"local":            conn.LocalAddr(),
+				"total_bytes_read": total_bytes,
+			}).Error(err)
+			return
+		}
+	}
+	dst = bufio.NewWriter(fd)
 	for {
 		conn.SetReadDeadline(time.Now().Add(maxReadTimeout))
 		bytes, err := br.ReadBytes('\n')
@@ -128,6 +142,14 @@ func handleAccept(env Env, conn net.Conn, maxReadTimeout time.Duration) {
 			})
 			if err == io.EOF {
 				rep.Info(err)
+			} else if nErr, ok := err.(net.Error); ok && nErr.Timeout() {
+				rep.Info("Timeout on socket " + err.Error())
+			} else if oErr, ok := err.(*net.OpError); ok {
+				if oErr.Op == "read" {
+					rep.Info("could not read due to OpError " + oErr.Error())
+				} else {
+					rep.Error(err)
+				}
 			} else {
 				rep.Error(err)
 			}
