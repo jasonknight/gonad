@@ -1,4 +1,5 @@
-# Gonad - as ゴナ daemon
+# Gonad 
+### as in ゴナ daemon, pronounced gonna dee
 
 A simple TCP logging server. 
 
