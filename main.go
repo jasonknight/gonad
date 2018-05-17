@@ -22,7 +22,7 @@ type Env struct {
 	Fd              *os.File
 }
 
-// Because no one ever fucking provides this
+// Because no one ever provides this for reasons
 func pathExists(path string) bool {
 	_, err := os.Stat(path)
 	if err == nil {
