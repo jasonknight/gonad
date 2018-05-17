@@ -51,7 +51,7 @@ func createEnv() (Env, error) {
 	var f *os.File
 	var err error
 	if dest_type == "file" {
-		f, err = os.OpenFile(dest_path, os.O_APPEND|os.O_WRONLY, 0600)
+		f, err = os.OpenFile(dest_path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"path": dest_path,
@@ -65,8 +65,11 @@ func createEnv() (Env, error) {
 	}
 	return Env{host, port, dest_type, dest_path, f}, nil
 }
+func setOutput(f *os.File) {
+	logrus.SetOutput(f)
+}
 func main() {
-	log.Out = os.Stdout
+	setOutput(os.Stdout)
 	env, err := createEnv()
 	if err != nil {
 		log.Error(err)
@@ -98,15 +101,18 @@ func main() {
 func handleAccept(env Env, conn net.Conn, maxReadTimeout time.Duration) {
 	total_bytes := 0
 	br := bufio.NewReader(conn)
+	dst := bufio.NewWriter(env.Fd)
 	defer func() {
 		conn.Close()
-		env.Fd.Write([]byte("\n"))
+		dst.Write([]byte("\n"))
+		dst.Flush()
 	}()
 	for {
 		conn.SetReadDeadline(time.Now().Add(maxReadTimeout))
 		bytes, err := br.ReadBytes('\n')
 		total_bytes += len(bytes)
 		if err != nil {
+			dst.Flush()
 			rep := log.WithFields(logrus.Fields{
 				"method":           "handleAccept",
 				"while":            "reading from client",
@@ -121,7 +127,7 @@ func handleAccept(env Env, conn net.Conn, maxReadTimeout time.Duration) {
 			}
 			return
 		}
-		env.Fd.Write(bytes)
-		env.Fd.Write([]byte("\n"))
+		dst.Write(bytes)
+		dst.Write([]byte("\n"))
 	}
 }
