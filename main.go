@@ -133,6 +133,7 @@ func handleAccept(env Env, conn net.Conn, maxReadTimeout time.Duration) {
 			}
 			return
 		}
+		log.Info(string(bytes))
 		dst.Write(bytes)
 		dst.Write([]byte("\n"))
 	}

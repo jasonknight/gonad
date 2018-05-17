@@ -7,6 +7,7 @@ import (
 	"time"
 	"bufio"
 	"io/ioutil"
+	"fmt"
 )
 func getField(env Env,f string) string {
 	ref := reflect.ValueOf(env)
@@ -75,7 +76,6 @@ func TestHandleAccept(t *testing.T) {
 	os.Setenv("GONAD_DESTINATION","file")
 	os.Setenv("GONAD_DESTINATION_PATH","./test.golden")
 	env,_ := createEnv()
-	defer destroyEnv(env)
 	setOutput(os.Stdout)
 	os.Setenv("GONAD_DESTINATION",old_dest)
 	os.Setenv("GONAD_DESTINATION_PATH",old_path)
@@ -94,7 +94,12 @@ func TestHandleAccept(t *testing.T) {
 	}(bufio.NewWriter(c))
 	go handleAccept(env,s,5 * time.Second)
 	time.Sleep(1 * time.Second)
-	contents,_ := ioutil.ReadFile("./test.golden")
+	env.Fd.Close()
+	contents,err := ioutil.ReadFile("./test.golden")
+	if err != nil {
+		t.Errorf("%s",err)
+	}
+	fmt.Printf("contents[%s]",contents)
 	rs := contents[:len(test_bytes)]
 	if string(test_bytes[:]) != string(rs) {
 		t.Errorf("'%s' != '%s' from: %s\n",test_bytes[:],rs, contents)

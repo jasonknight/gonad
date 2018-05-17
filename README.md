@@ -1,4 +1,4 @@
-# Gonad
+# Gonad - as ゴナ daemon
 
 A simple TCP logging server. 
 
