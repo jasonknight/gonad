@@ -13,6 +13,21 @@ func getField(env Env,f string) string {
 	v := reflect.Indirect(ref).FieldByName(f)
 	return string(v.String())
 }
+func createServerAndClient() (net.Listener, net.Conn, net.Conn) {
+	listener, err := net.Listen("tcp", ":1337")
+	if err != nil {
+		panic("could not create server")
+	}
+	sender,err := net.Dial("tcp",":1337")
+	if err != nil {
+		panic("could not create client")
+	}
+	lc,err := listener.Accept()
+	if err != nil {
+		panic(err)
+	}
+	return listener,lc,sender
+}
 func TestPathExists(t *testing.T) {
 	if pathExists("./main_test.go") != true {
 		t.Errorf("failed to test if path exists")
@@ -51,10 +66,10 @@ func TestHandleAccept(t *testing.T) {
 			os.Remove("./test.golden")
 		}
 	}()
-	// Credits to Freman from SO for this idea
-	s,c := net.Pipe()
+	l,s,c := createServerAndClient()
 	defer c.Close()
 	defer s.Close()
+	defer l.Close()
 	old_dest := os.Getenv("GONAD_DESTINATION")
 	old_path := os.Getenv("GONAD_DESTINATION_PATH")
 	os.Setenv("GONAD_DESTINATION","file")
@@ -75,6 +90,7 @@ func TestHandleAccept(t *testing.T) {
 			t.Errorf("n=%d",n)
 		}
 		wr.Flush()
+		time.Sleep(1 * time.Second)
 	}(bufio.NewWriter(c))
 	go handleAccept(env,s,5 * time.Second)
 	time.Sleep(1 * time.Second)
