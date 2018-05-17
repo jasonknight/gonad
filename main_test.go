@@ -46,6 +46,11 @@ func TestCreateEnv(t *testing.T) {
 	}
 }
 func TestHandleAccept(t *testing.T) {
+	defer func () {
+		if pathExists("./test.golden") {
+			os.Remove("./test.golden")
+		}
+	}()
 	// Credits to Freman from SO for this idea
 	s,c := net.Pipe()
 	old_dest := os.Getenv("GONAD_DESTINATION")
