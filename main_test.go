@@ -40,10 +40,10 @@ func TestCreateEnv(t *testing.T) {
 		name string
 		value string
 	}{
-		{"Host","GONAD_HOST","testing_value"},
-		{"Port","GONAD_PORT","testing_value"},
-		{"Destination","GONAD_DESTINATION","testing_value"},
-		{"DestinationPath","GONAD_DESTINATION_PATH","testing_value"},
+		{"Host","GONNAD_HOST","testing_value"},
+		{"Port","GONNAD_PORT","testing_value"},
+		{"Destination","GONNAD_DESTINATION","testing_value"},
+		{"DestinationPath","GONNAD_DESTINATION_PATH","testing_value"},
 	}
 	var old string
 	for _,test_e := range table {
@@ -71,14 +71,14 @@ func TestHandleAccept(t *testing.T) {
 	defer c.Close()
 	defer s.Close()
 	defer l.Close()
-	old_dest := os.Getenv("GONAD_DESTINATION")
-	old_path := os.Getenv("GONAD_DESTINATION_PATH")
-	os.Setenv("GONAD_DESTINATION","file")
-	os.Setenv("GONAD_DESTINATION_PATH","./test.golden")
+	old_dest := os.Getenv("GONNAD_DESTINATION")
+	old_path := os.Getenv("GONNAD_DESTINATION_PATH")
+	os.Setenv("GONNAD_DESTINATION","file")
+	os.Setenv("GONNAD_DESTINATION_PATH","./test.golden")
 	env,_ := createEnv()
 	setOutput(os.Stdout)
-	os.Setenv("GONAD_DESTINATION",old_dest)
-	os.Setenv("GONAD_DESTINATION_PATH",old_path)
+	os.Setenv("GONNAD_DESTINATION",old_dest)
+	os.Setenv("GONNAD_DESTINATION_PATH",old_path)
 
 	test_bytes := []byte("hello world\n")
 	go func(wr *bufio.Writer) {

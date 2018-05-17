@@ -31,18 +31,18 @@ func pathExists(path string) bool {
 	return false
 }
 func createEnv() (Env, error) {
-	host := os.Getenv("GONAD_HOST")
-	port := os.Getenv("GONAD_PORT")
+	host := os.Getenv("GONNAD_HOST")
+	port := os.Getenv("GONNAD_PORT")
 	if port == "" {
 		port = "601"
 	}
-	dest_type := os.Getenv("GONAD_DESTINATION")
+	dest_type := os.Getenv("GONNAD_DESTINATION")
 	if dest_type == "" {
 		dest_type = "stdout"
 	}
-	dest_path := os.Getenv("GONAD_DESTINATION_PATH")
+	dest_path := os.Getenv("GONNAD_DESTINATION_PATH")
 	if dest_path == "" {
-		dest_path = "/var/log/gonad.log"
+		dest_path = "/var/log/GONNAD.log"
 	}
 	if pathExists(path.Dir(dest_path)) == false {
 		log.WithFields(logrus.Fields{"path": dest_path}).Error("directory does not exist!")
@@ -94,7 +94,7 @@ func main() {
 	log.WithFields(logrus.Fields{
 		"host": env.Host,
 		"port": env.Port,
-	}).Info("Gonad " + Version + " running")
+	}).Info("GONNAD " + Version + " running")
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
