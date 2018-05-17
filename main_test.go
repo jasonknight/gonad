@@ -53,24 +53,31 @@ func TestHandleAccept(t *testing.T) {
 	}()
 	// Credits to Freman from SO for this idea
 	s,c := net.Pipe()
+	defer c.Close()
+	defer s.Close()
 	old_dest := os.Getenv("GONAD_DESTINATION")
 	old_path := os.Getenv("GONAD_DESTINATION_PATH")
 	os.Setenv("GONAD_DESTINATION","file")
 	os.Setenv("GONAD_DESTINATION_PATH","./test.golden")
 	env,_ := createEnv()
+	defer destroyEnv(env)
 	setOutput(os.Stdout)
 	os.Setenv("GONAD_DESTINATION",old_dest)
 	os.Setenv("GONAD_DESTINATION_PATH",old_path)
 
 	test_bytes := []byte("hello world\n")
-	go func() {
-		wr := bufio.NewWriter(c)
-		wr.Write(test_bytes)
-		c.Close()
-	}()
-	go handleAccept(env,c,5 * time.Second)
-	defer env.Fd.Close()
-	defer s.Close()
+	go func(wr *bufio.Writer) {
+		n,err := wr.Write(test_bytes)
+		if err != nil {
+			t.Errorf("in go write %s",err)
+		}
+		if n == 0 {
+			t.Errorf("n=%d",n)
+		}
+		wr.Flush()
+	}(bufio.NewWriter(c))
+	go handleAccept(env,s,5 * time.Second)
+	time.Sleep(1 * time.Second)
 	contents,_ := ioutil.ReadFile("./test.golden")
 	rs := contents[:len(test_bytes)]
 	if string(test_bytes[:]) != string(rs) {

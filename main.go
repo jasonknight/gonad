@@ -65,6 +65,12 @@ func createEnv() (Env, error) {
 	}
 	return Env{host, port, dest_type, dest_path, f}, nil
 }
+func destroyEnv(env Env) {
+	if (env.Destination == "file") {
+		env.Fd.Close()
+	}
+	// Here for backend server code
+}
 func setOutput(f *os.File) {
 	logrus.SetOutput(f)
 }
